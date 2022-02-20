@@ -58,15 +58,16 @@ export class MmogaService {
       categories.forEach(category => {
         const filter = this.mmogaHelper.makeObj(category.rule)
         const skinFilterRangeEndpoint = +filter?.skins.split('').slice(1).join('') // filter endpoint range if number, NaN if string
+        const regionFilterEndpoint = filter?.region.split('').slice(1).join('')
 
         if (
           filter.hasOwnProperty('skins') &&
-          !filter.hasOwnProperty('region') &&
-          accountOrderPart.indexOf('Region') === -1
+          !filter.hasOwnProperty('region')
         ) {
           if (
             skinRange &&
-            Number.isInteger(skinFilterRangeEndpoint) // true = number; false = string
+            Number.isInteger(skinFilterRangeEndpoint) && // true = number; false = string
+            accountOrderPart.indexOf('Region') === -1
           ) {
             const switchMap = filter.skins.split('').shift()
             switch (switchMap) {
@@ -99,9 +100,10 @@ export class MmogaService {
           if (
             skinRange &&
             Number.isInteger(skinFilterRangeEndpoint) && // true = number; false = string
-            accountOrderPart.indexOf(filter.region) !== -1
+            accountOrderPart.indexOf(regionFilterEndpoint) !== -1
           ) {
             const switchMap = filter.skins.split('').shift()
+            console.log(filter)
             switch (switchMap) {
               case '>':
                 if (+skinRange[0] > skinFilterRangeEndpoint || +skinRange[1] > skinFilterRangeEndpoint) {
@@ -120,13 +122,15 @@ export class MmogaService {
                 break;
             }
           } else {
-            if (skinOrderPart.indexOf(filter.skins) !== -1 && accountOrderPart.indexOf(filter.region) !== -1) {
+            if (skinOrderPart.indexOf(filter.skins) !== -1 && accountOrderPart.indexOf(regionFilterEndpoint) !== -1) {
               Object.assign(order, this.mmogaHelper.mutateOrderProperty(order, category))
             }
           }
         }
       })
     })
+
+
 
     return { orders }
   }

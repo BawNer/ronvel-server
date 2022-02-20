@@ -8,7 +8,6 @@ export class MmogaHelper {
       const value = filter.split(':').pop()
       filters[key] = value
     })
-
     return filters
   }
 
