@@ -9,10 +9,12 @@ import { MmogaModule } from './mmoga/mmoga.module';
 import ormconfig from './ormconfig'
 import { AuthMiddleware } from './users/middlewares/auth.middleware';
 import { UserModule } from './users/user.module';
+import { ScheduleModule } from '@nestjs/schedule'
+
 
 
 @Module({
-  imports: [TypeOrmModule.forRoot(ormconfig), UserModule, CategoriesModule, MmogaModule, AccountModule],
+  imports: [TypeOrmModule.forRoot(ormconfig), ScheduleModule.forRoot(), UserModule, CategoriesModule, MmogaModule, AccountModule],
   controllers: [AppController],
   providers: [AppService],
 })
@@ -22,7 +24,7 @@ export class AppModule {
       path: '*',
       method: RequestMethod.ALL
     })
-    consumer.apply(TextToJsonMiddleware).forRoutes ({
+    consumer.apply(TextToJsonMiddleware).forRoutes({
       path: '/account',
       method: RequestMethod.POST
     })

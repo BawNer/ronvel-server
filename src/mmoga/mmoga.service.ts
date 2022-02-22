@@ -1,4 +1,4 @@
-import { HttpCode, HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import mmogaConfig from './mmoga.config'
 import { OrdersResponseInterface } from "./types/ordersResponse.interface";
 const md5 = require('md5')
@@ -7,14 +7,112 @@ import axios from 'axios'
 import { CategoriesService } from "@app/categories/categories.service";
 import { MmogaHelper } from "./helpers/mmoga.helper";
 import { AccountService } from "@app/accounts/account.service";
-
+import { VerificateAccountHelper } from "@app/accounts/helpers/verificateAccount.helper";
+import { SchedulerRegistry } from '@nestjs/schedule'
+import { CronJob } from 'cron'
 @Injectable()
 export class MmogaService {
   protected mmogaHelper = new MmogaHelper()
+  protected isDeamonExecuteOrder = null
+  protected cron = new CronJob('* */5 * * * *', async () => {
+    await this.execute()
+  })
   constructor (
     private readonly categoriesService: CategoriesService,
-    private readonly accountService: AccountService
-  ) {}
+    private readonly accountService: AccountService,
+    private readonly scheduleRegistry: SchedulerRegistry
+  ) {
+    this.scheduleRegistry.addCronJob('mmogaDeamon', this.cron)
+  }
+
+  getStateDeamon(): boolean {
+    if (this.isDeamonExecuteOrder === null || this.isDeamonExecuteOrder == 'false') {
+      return false
+    }
+    return true
+  }
+
+  async changeDeamonState(status: string) {
+    if (this.isDeamonExecuteOrder !== status) {
+      this.isDeamonExecuteOrder = status
+      if (status == 'true') {
+        const task = this.scheduleRegistry.getCronJob('mmogaDeamon')
+        task.start()
+      } else {
+        const task = this.scheduleRegistry.getCronJob('mmogaDeamon')
+        task.stop()
+      }
+      return `Deamon status has been changed to ${this.isDeamonExecuteOrder}`
+    }
+    throw new HttpException('status already exist', HttpStatus.CONFLICT)
+  }
+
+  async executeOrder(orderId: string, accountId: number): Promise<OrdersResponseInterface> {
+    const endOrder = []
+    const categories = await this.categoriesService.findAllCategories()
+    const account = await this.accountService.findById(accountId)
+    const {orders} = await this.getAllOrders('processing')
+    const order = orders.filter(c => c.categoryId === account.categoryId)
+    if (account.status === 'pending') {
+     for (let i = 0; i < order.length; i++) {
+        if (order[i].id[0] === orderId ) {
+          categories.forEach(async category => {
+            if (category.id === account.categoryId) {
+              const filters = this.mmogaHelper.makeObj(category.rule)
+              if (filters.validate == 'true') {
+                // validate account
+                const accountInfo = JSON.parse(account.info)
+                const status = await new VerificateAccountHelper().verificate(accountInfo.account.login, accountInfo.account.password, accountInfo.account.lastmatch)
+                if (status === 'pending') {
+                  for (let i = 0; i < orders.length; i++) {
+                    if (account.categoryId === orders[i]?.categoryId) {
+                      try {
+                        await this.provide(orders[i], account)
+                        await this.accountService.updateAccount({ categoryId: account.categoryId, status: 'closed' }, account.id)
+                        delete orders[i].categoryId /* удаляем категорию у заказа */
+                        endOrder.push({
+                          orderId: orders[i].id[0],
+                          accountId: account.id,
+                          summ: orders[i].unitPriceFromXML[0],
+                          status: 'closed'
+                        })
+                        break;
+                      } catch (err) {
+                        throw new HttpException('fail', HttpStatus.CONFLICT)
+                      }
+                    }
+                  }
+                } else {
+                  await this.accountService.updateAccount({ categoryId: account.categoryId, status }, account.id)
+                }
+              } else {
+                for (let i = 0; i < orders.length; i++) {
+                  if (account.categoryId === orders[i]?.categoryId) {
+                    try {
+                      await this.provide(orders[i], account)
+                      await this.accountService.updateAccount({ categoryId: account.categoryId, status: 'closed' }, account.id)
+                      delete orders[i].categoryId /* удаляем категорию у заказа */
+                      endOrder.push({
+                        orderId: orders[i].id[0],
+                        accountId: account.id,
+                        summ: orders[i].unitPriceFromXML[0],
+                        status: 'closed'
+                      })
+                      break;
+                    } catch (err) {
+                      throw new HttpException('fail', HttpStatus.CONFLICT)
+                    }
+                  }
+                }
+              }
+            }
+          })
+        }
+      } 
+    }
+    
+    return { orders: endOrder }
+  }
 
   async getAllOrders(status: string): Promise<OrdersResponseInterface> {
 
@@ -57,76 +155,89 @@ export class MmogaService {
 
       categories.forEach(category => {
         const filter = this.mmogaHelper.makeObj(category.rule)
-        const skinFilterRangeEndpoint = +filter?.skins.split('').slice(1).join('') // filter endpoint range if number, NaN if string
-        const regionFilterEndpoint = filter?.region.split('').slice(1).join('')
+        if (!filter.hasOwnProperty('strictMode')) {
+          if (
+            filter.hasOwnProperty('skins') &&
+            !filter.hasOwnProperty('region')
+          ) {
+            const skinFilterRangeEndpoint = +filter?.skins.split('').slice(1).join('') // filter endpoint range if number, NaN if string
+            if (
+              skinRange &&
+              Number.isInteger(skinFilterRangeEndpoint) && // true = number; false = string
+              (accountOrderPart.indexOf('Region') === -1 || accountOrderPart.indexOf('Random') !== -1)
+            ) {
+              const switchMap = filter.skins.split('').shift()
+              switch (switchMap) {
+                case '>':
+                  if (+skinRange[1] > skinFilterRangeEndpoint) {
+                    Object.assign(order, this.mmogaHelper.mutateOrderProperty(order, category))
+                  }
+                  break;
+                case '<':
+                  if (+skinRange[0] < skinFilterRangeEndpoint && +skinRange[1] > skinFilterRangeEndpoint) {
+                    Object.assign(order, this.mmogaHelper.mutateOrderProperty(order, category))
+                  }
+                  break;
+                case '=':
+                  if (+skinRange[0] == skinFilterRangeEndpoint || +skinRange[1] == skinFilterRangeEndpoint) {
+                    Object.assign(order, this.mmogaHelper.mutateOrderProperty(order, category))
+                  }
+                  break;
+              }
+            } else {
+              if (skinOrderPart.indexOf(filter.skins) !== -1) {
+                Object.assign(order, this.mmogaHelper.mutateOrderProperty(order, category))
+              }
+            }
+            // filter with region and skins
+          } else if (
+            filter.hasOwnProperty('skins') &&
+            filter.hasOwnProperty('region')
+          ) {
+            const regionFilterEndpoint = filter.region.split('').slice(1).join('')
+            const skinFilterRangeEndpoint = +filter?.skins.split('').slice(1).join('') // filter endpoint range if number, NaN if string
+            if (
+              skinRange &&
+              Number.isInteger(skinFilterRangeEndpoint) && // true = number; false = string
+              accountOrderPart.indexOf(regionFilterEndpoint) !== -1
+            ) {
+              const switchMap = filter.skins.split('').shift()
 
-        if (
-          filter.hasOwnProperty('skins') &&
-          !filter.hasOwnProperty('region')
-        ) {
-          if (
-            skinRange &&
-            Number.isInteger(skinFilterRangeEndpoint) && // true = number; false = string
-            accountOrderPart.indexOf('Region') === -1
+              switch (switchMap) {
+                case '>':
+                  if (+skinRange[0] > skinFilterRangeEndpoint || +skinRange[1] > skinFilterRangeEndpoint) {
+                    Object.assign(order, this.mmogaHelper.mutateOrderProperty(order, category))
+                  }
+                  break;
+                case '<':
+                  if (+skinRange[0] < skinFilterRangeEndpoint && +skinRange[1] > skinFilterRangeEndpoint) {
+                    Object.assign(order, this.mmogaHelper.mutateOrderProperty(order, category))
+                  }
+                  break;
+                case '=':
+                  if (+skinRange[0] == skinFilterRangeEndpoint || +skinRange[1] == skinFilterRangeEndpoint) {
+                    Object.assign(order, this.mmogaHelper.mutateOrderProperty(order, category))
+                  }
+                  break;
+              }
+            } else {
+              if (skinOrderPart.indexOf(filter.skins) !== -1 && accountOrderPart.indexOf(regionFilterEndpoint) !== -1) {
+                Object.assign(order, this.mmogaHelper.mutateOrderProperty(order, category))
+              }
+            }
+          } else if (
+            !filter.hasOwnProperty('skins') &&
+            filter.hasOwnProperty('region')
           ) {
-            const switchMap = filter.skins.split('').shift()
-            switch (switchMap) {
-              case '>':
-                if (+skinRange[0] > skinFilterRangeEndpoint || +skinRange[1] > skinFilterRangeEndpoint) {
-                  Object.assign(order, this.mmogaHelper.mutateOrderProperty(order, category))
-                }
-                break;
-              case '<':
-                if (+skinRange[0] < skinFilterRangeEndpoint && +skinRange[1] > skinFilterRangeEndpoint) {
-                  Object.assign(order, this.mmogaHelper.mutateOrderProperty(order, category))
-                }
-                break;
-              case '=':
-                if (+skinRange[0] == skinFilterRangeEndpoint || +skinRange[1] == skinFilterRangeEndpoint) {
-                  Object.assign(order, this.mmogaHelper.mutateOrderProperty(order, category))
-                }
-                break;
-            }
-          } else {
-            if (skinOrderPart.indexOf(filter.skins) !== -1) {
-              Object.assign(order, this.mmogaHelper.mutateOrderProperty(order, category))
-            }
+            const regionFilterEndpoint = filter.region.split('').slice(1).join('')
+            accountOrderPart.indexOf(regionFilterEndpoint) !== -1 ? Object.assign(order, this.mmogaHelper.mutateOrderProperty(order, category)) : false
           }
-          // filter with region and skins
-        } else if (
-          filter.hasOwnProperty('skins') &&
-          filter.hasOwnProperty('region')
-        ) {
-          if (
-            skinRange &&
-            Number.isInteger(skinFilterRangeEndpoint) && // true = number; false = string
-            accountOrderPart.indexOf(regionFilterEndpoint) !== -1
-          ) {
-            const switchMap = filter.skins.split('').shift()
-            console.log(filter)
-            switch (switchMap) {
-              case '>':
-                if (+skinRange[0] > skinFilterRangeEndpoint || +skinRange[1] > skinFilterRangeEndpoint) {
-                  Object.assign(order, this.mmogaHelper.mutateOrderProperty(order, category))
-                }
-                break;
-              case '<':
-                if (+skinRange[0] < skinFilterRangeEndpoint && +skinRange[1] > skinFilterRangeEndpoint) {
-                  Object.assign(order, this.mmogaHelper.mutateOrderProperty(order, category))
-                }
-                break;
-              case '=':
-                if (+skinRange[0] == skinFilterRangeEndpoint || +skinRange[1] == skinFilterRangeEndpoint) {
-                  Object.assign(order, this.mmogaHelper.mutateOrderProperty(order, category))
-                }
-                break;
-            }
-          } else {
-            if (skinOrderPart.indexOf(filter.skins) !== -1 && accountOrderPart.indexOf(regionFilterEndpoint) !== -1) {
-              Object.assign(order, this.mmogaHelper.mutateOrderProperty(order, category))
-            }
+        } else {
+          if (game === category.name) {
+            Object.assign(order, this.mmogaHelper.mutateOrderProperty(order, category))
           }
         }
+        
       })
     })
 
@@ -250,26 +361,61 @@ export class MmogaService {
   async execute (): Promise<OrdersResponseInterface> {
     const { orders } = await this.getAllOrders('progressing')
     const accounts = await this.accountService.findAllByStatus('pending')
+    const categories = await this.categoriesService.findAllCategories()
     const closedOrders = []
     for (const account of accounts) {
-      for (let i = 0; i < orders.length; i++) {
-        if (account.categoryId === orders[i]?.categoryId) {
-          try {
-            await this.provide(orders[i], account)
-            await this.accountService.updateAccount({categoryId: account.categoryId, status: 'closed'}, account.id)
-            delete orders[i].categoryId /* удаляем категорию у заказа */
-            closedOrders.push({
-              orderId: orders[i].id[0],
-              accountId: account.id,
-              summ: orders[i].unitPriceFromXML[0],
-              status: 'closed'
-            })
-            break;
-          } catch (err) {
-            throw new HttpException('fail', HttpStatus.CONFLICT)
+      categories.forEach(async category => {
+        if (category.id === account.categoryId) {
+          const filters = this.mmogaHelper.makeObj(category.rule)
+          if (filters.validate == 'true') {
+            // validate account
+            const accountInfo = JSON.parse(account.info)
+            const status = await new VerificateAccountHelper().verificate(accountInfo.account.login, accountInfo.account.password, accountInfo.account.lastmatch)
+            if (status === 'pending') {
+              for (let i = 0; i < orders.length; i++) {
+                if (account.categoryId === orders[i]?.categoryId) {
+                  try {
+                    await this.provide(orders[i], account)
+                    await this.accountService.updateAccount({ categoryId: account.categoryId, status: 'closed' }, account.id)
+                    delete orders[i].categoryId /* удаляем категорию у заказа */
+                    closedOrders.push({
+                      orderId: orders[i].id[0],
+                      accountId: account.id,
+                      summ: orders[i].unitPriceFromXML[0],
+                      status: 'closed'
+                    })
+                    break;
+                  } catch (err) {
+                    throw new HttpException('fail', HttpStatus.CONFLICT)
+                  }
+                }
+              }
+            } else {
+              await this.accountService.updateAccount({ categoryId: account.categoryId, status }, account.id)
+            }
+          } else {
+            for (let i = 0; i < orders.length; i++) {
+              if (account.categoryId === orders[i]?.categoryId) {
+                try {
+                  await this.provide(orders[i], account)
+                  await this.accountService.updateAccount({ categoryId: account.categoryId, status: 'closed' }, account.id)
+                  delete orders[i].categoryId /* удаляем категорию у заказа */
+                  closedOrders.push({
+                    orderId: orders[i].id[0],
+                    accountId: account.id,
+                    summ: orders[i].unitPriceFromXML[0],
+                    status: 'closed'
+                  })
+                  break;
+                } catch (err) {
+                  throw new HttpException('fail', HttpStatus.CONFLICT)
+                }
+              }
+            }
           }
         }
-      }
+      })
+      
     }
 
     return { orders: closedOrders }

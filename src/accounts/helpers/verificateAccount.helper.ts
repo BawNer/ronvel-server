@@ -5,7 +5,7 @@ export class VerificateAccountHelper {
 
   public async verificate(login: string, password: string, lastmatch: number): Promise<string> {
     let verified = '';
-    const browser = await this.puppeteer.launch({ headless: true })
+    const browser = await this.puppeteer.launch({ headless: true, agrs: ['--no-sandbox', '--disable-setuid-sandbox'] })
 
     const page = await browser.newPage()
 

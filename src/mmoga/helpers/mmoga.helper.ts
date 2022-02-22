@@ -1,7 +1,7 @@
 export class MmogaHelper {
 
   public makeObj(rule: string): any {
-    const rules: string[] = rule.split(',')
+    const rules: string[] = rule.split('').indexOf(',') !== -1 ? rule.split(',') : [rule]
     const filters = {}
     rules.forEach(filter => {
       const key = filter.split(':').shift()
@@ -15,7 +15,7 @@ export class MmogaHelper {
     
     const firstSkinInput = orderSkinPart.indexOf('Skins')
     if (orderSkinPart.indexOf('Rare') === -1 && orderSkinPart[firstSkinInput - 1]) {
-      return orderSkinPart[firstSkinInput-1].split("-")
+      return orderSkinPart[firstSkinInput-1].split(" ").join('').split("-")
     } else {
       return false
     }
@@ -25,12 +25,14 @@ export class MmogaHelper {
     if (order.hasOwnProperty('weight')) {
       if (order.weight < category.weight) {
         return {
-          categoryId: category.id
+          categoryId: category.id,
+          weight: category.weight
         }
       }
     } else {
       return {
-        categoryId: category.id
+        categoryId: category.id,
+        weight: category.weight
       }
     }
   }

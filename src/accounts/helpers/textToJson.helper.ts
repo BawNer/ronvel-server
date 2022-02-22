@@ -47,6 +47,8 @@ export class TextToJsonHelper {
       const matchIndexEnd: number = nodeArr.indexOf('Competitive')
       const rankStartIndex: number = nodeArr.indexOf('rank')
       const rankEndIndex: number = nodeArr.indexOf('Agents')
+      const banIndex: number = nodeArr.indexOf('Ban')
+      const valorantPointsIndex: number = nodeArr.indexOf('VP')
       let lastMatch: string = ''
       let skins: string[] = []
       let username: string = ''
@@ -78,6 +80,8 @@ export class TextToJsonHelper {
           index: nodeArr[regionIndex + 1],
           country: nodeArr[countryIndex + 1]
         },
+        ban: nodeArr[banIndex+1],
+        valorantPoints: nodeArr[valorantPointsIndex+1],
         lastMatch: new Date(lastMatch).getTime(),
         rank,
         skinCount: nodeArr[skinCountIndex + 2],

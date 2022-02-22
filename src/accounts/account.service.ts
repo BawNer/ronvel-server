@@ -30,13 +30,12 @@ export class AccountService {
     const resultsAccount: AccountEntity[] = []
     const categories = await this.categoriesService.findAllCategories()
     const mergeCategoiesWitAccount = new AddCategoryHelper(categories, createAccountDto)
-    const verificateHelper = new VerificateAccountHelper()
     const accounts: any = mergeCategoiesWitAccount.merge()
     for (const account of accounts) {
       const newAccount = new AccountEntity()
       const fields: CreateAccountDto = {
         categoryId: !account.categoryId ? null : account.categoryId,
-        status: await verificateHelper.verificate(account.account.login, account.account.password, account.account.lastmatch),
+        status: 'pending',
         info: JSON.stringify({ game: account.game, account: account.account })
       }
       Object.assign(newAccount, fields)
@@ -55,6 +54,14 @@ export class AccountService {
 
     Object.assign(account, updateAccountDto)
     return await this.accountRepository.save(account)
+  }
+
+  async findById (id: number): Promise<AccountEntity> {
+    const account = await this.accountRepository.findOne(id)
+    if (account) {
+      throw new HttpException('bad credintails', HttpStatus.FORBIDDEN)
+    }
+    return Object.assign(new AccountEntity(), account)
   }
 
   async deleteAccount(id: number): Promise<DeleteResult> {

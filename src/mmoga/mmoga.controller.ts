@@ -1,8 +1,6 @@
 import { AuthGuard } from "@app/users/guards/auth.guards";
-import { Body, Controller, Get, Post, Param, UseGuards } from "@nestjs/common";
-import { ExecuteOrderDto } from "./dto/executeOrder.dto";
+import { Controller, Get, Post, Param, UseGuards, Body } from "@nestjs/common";
 import { MmogaService } from "./mmoga.service";
-import { OrderResponseInterface } from "./types/orderResponse.interface";
 import { OrdersResponseInterface } from "./types/ordersResponse.interface";
 
 
@@ -18,15 +16,27 @@ export class MmogaController {
     return await this.mmogaService.getAllOrders(status)
   }
 
-  @Post('execute')
+  @Post('orders/execute')
   @UseGuards(AuthGuard)
   async execute(): Promise<OrdersResponseInterface> {
     return await this.mmogaService.execute()
   }
 
-  // @Post('execute/:orderId')
-  // @UseGuards(AuthGuard)
-  // async executeOrder(@Param('orderId') orderId: number): Promise<OrderResponseInterface> {
-  //   return 'as' as any
-  // }
+  @Post('orders/deamon/:status')
+  @UseGuards(AuthGuard)
+  async changeStateDeamon(@Param('status') status: string): Promise<string> {
+    return await this.mmogaService.changeDeamonState(status)
+  }
+
+  @Get('orders/deamon/status') 
+  @UseGuards(AuthGuard)
+  getStateDeamon(): boolean {
+    return this.mmogaService.getStateDeamon()
+  }
+
+  @Post('execute/:orderId')
+  @UseGuards(AuthGuard)
+  async executeOrder(@Param('orderId') orderId: string, @Body('accountId') accountId: number): Promise<OrdersResponseInterface> {
+    return await this.mmogaService.executeOrder(orderId, accountId)
+  }
 }

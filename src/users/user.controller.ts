@@ -15,6 +15,7 @@ export class UserController {
 
   @Post('users')
   @UsePipes(new ValidationPipe())
+  @UseGuards(AuthGuard)
   async createUser(@Body('user') createUserdto: CreateUserDto): Promise<UserResponseInterface> {
     const user = await this.userService.createUser(createUserdto)
     return await this.userService.buildUserResposne(user)
