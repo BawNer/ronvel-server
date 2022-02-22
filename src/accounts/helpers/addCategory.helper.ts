@@ -13,16 +13,14 @@ export class AddCategoryHelper {
   }
 
   protected mutateAccountProperty(account: any, category: any): object {
-    if (!account.hasOwnProperty('categoryWeight')) {
+    if (!account.hasOwnProperty('weight')) {
       return {
-        categoryId: category.id,
-        categoryWeight: category.weight
+        categoryId: category.id
       }
     } else {
-      if (account.categoryWeight < category.weight) {
+      if (account.weight < category.weight) {
         return {
-          categoryId: category.id,
-          categoryWeight: category.weight
+          categoryId: category.id
         }
       }
     }

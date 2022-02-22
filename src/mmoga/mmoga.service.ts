@@ -155,7 +155,7 @@ export class MmogaService {
 
       categories.forEach(category => {
         const filter = this.mmogaHelper.makeObj(category.rule)
-        if (!filter.hasOwnProperty('strictMode')) {
+        if (filter.strictMode.split('=').join('') === 'false') {
           if (
             filter.hasOwnProperty('skins') &&
             !filter.hasOwnProperty('region')
