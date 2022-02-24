@@ -141,7 +141,7 @@ export class AddCategoryHelper {
             !filter.hasOwnProperty('ban') &&
             !filter.hasOwnProperty('valorantPoints')
           ) {
-            const region = filter.region.split('=').pop()
+            const region = filter.region.split('').slice(1).join('')
             accountProperty.region.index === region ? Object.assign(account, this.mutateAccountProperty(account, category)) : false
           } else
             if (
@@ -151,7 +151,7 @@ export class AddCategoryHelper {
               !filter.hasOwnProperty('valorantPoints')
             ) {
               const skinFilterRangeEndpoint = +filter?.skins.split('').slice(1).join('') // filter endpoint range if number, NaN if string
-              const region = filter.region.split('=').pop()
+              const region = filter.region.split('').slice(1).join('')
               account = this.mergeAction(
                 (accountProperty.region.index === region),
                 (accountProperty.region.index === region),
@@ -168,11 +168,11 @@ export class AddCategoryHelper {
                 !filter.hasOwnProperty('valorantPoints')
               ) {
                 const skinFilterRangeEndpoint = +filter?.skins.split('').slice(1).join('') // filter endpoint range if number, NaN if string
-                const region = filter.region.split('=').pop()
-                const ban = filter.ban.split('=').pop()
+                const region = filter.region.split('').slice(1).join('')
+                const ban = filter.ban.split('').slice(1).join('')
                 account = this.mergeAction(
                   (Number.isInteger(skinFilterRangeEndpoint) && accountProperty.region.index === region && ban === 'No'),
-                  (accountProperty.skins.indexOf(filter.skins) !== -1 && accountProperty.region.index === region && ban === 'Yes'),
+                  (accountProperty.skins.indexOf(filter.skins) !== -1 && accountProperty.region.index === region && ban === 'No'),
                   account,
                   filter,
                   category,
@@ -186,7 +186,7 @@ export class AddCategoryHelper {
                   !filter.hasOwnProperty('valorantPoints')
                 ) {
                   const skinFilterRangeEndpoint = +filter?.skins.split('').slice(1).join('') // filter endpoint range if number, NaN if string
-                  const ban = filter.ban.split('=').pop()
+                  const ban = filter.ban.split('').slice(1).join('')
                   account = this.mergeAction(
                     (Number.isInteger(skinFilterRangeEndpoint) && ban === 'No'),
                     (accountProperty.skins.indexOf(filter.skins) !== -1 && ban === 'No'),
@@ -202,8 +202,8 @@ export class AddCategoryHelper {
                     filter.hasOwnProperty('ban') &&
                     !filter.hasOwnProperty('valorantPoints')
                   ) {
-                    const region = filter.region.split('=').pop()
-                    const ban = filter.ban.split('=').pop()
+                    const region = filter.region.split('').slice(1).join('')
+                    const ban = filter.ban.split('').slice(1).join('')
                     account = this.mergeAction(
                       (accountProperty.region.index === region && ban === 'No'),
                       (accountProperty.region.index !== region && ban === 'No'),
@@ -219,11 +219,11 @@ export class AddCategoryHelper {
                       filter.hasOwnProperty('valorantPoints')
                     ) {
                       const skinFilterRangeEndpoint = +filter?.skins.split('').slice(1).join('') // filter endpoint range if number, NaN if string
-                      const region = filter.region.split('=').pop()
-                      const ban = filter.ban.split('=').pop()
+                      const region = filter.region.split('').slice(1).join('')
+                      const ban = filter.ban.split('').slice(1).join('')
                       account = this.mergeAction(
                         (Number.isInteger(skinFilterRangeEndpoint) && accountProperty.region.index === region && ban === 'No'),
-                        (accountProperty.skins.indexOf(filter.skins) !== -1 && accountProperty.region.index !== region && ban === 'Yes'),
+                        (accountProperty.skins.indexOf(filter.skins) !== -1 && accountProperty.region.index !== region && ban === 'No'),
                         account,
                         filter,
                         category,
@@ -236,11 +236,11 @@ export class AddCategoryHelper {
                         filter.hasOwnProperty('ban') &&
                         filter.hasOwnProperty('valorantPoints')
                       ) {
-                        const region = filter.region.split('=').pop()
-                        const ban = filter.ban.split('=').pop()
+                        const region = filter.region.split('').slice(1).join('')
+                        const ban = filter.ban.split('').slice(1).join('')
                         account = this.mergeAction(
                           (accountProperty.region.index === region && ban === 'No'),
-                          (accountProperty.region.index === region && ban === 'Yes'),
+                          (accountProperty.region.index === region && ban === 'No'),
                           account,
                           filter,
                           category
@@ -252,7 +252,7 @@ export class AddCategoryHelper {
                           filter.hasOwnProperty('ban') &&
                           filter.hasOwnProperty('valorantPoints')
                         ) {
-                          const ban = filter.ban.split('=').pop()
+                          const ban = filter.ban.split('').slice(1).join('')
                           account = this.mergeAction(
                             (ban === 'No'),
                             (ban === 'No'),
