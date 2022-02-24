@@ -10,11 +10,13 @@ import ormconfig from './ormconfig'
 import { AuthMiddleware } from './users/middlewares/auth.middleware';
 import { UserModule } from './users/user.module';
 import { ScheduleModule } from '@nestjs/schedule'
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 
 
 @Module({
-  imports: [TypeOrmModule.forRoot(ormconfig), ScheduleModule.forRoot(), UserModule, CategoriesModule, MmogaModule, AccountModule],
+  imports: [TypeOrmModule.forRoot(ormconfig), ServeStaticModule.forRoot({ rootPath: join(__dirname, '..', 'client'), exclude: ['/api*']}), ScheduleModule.forRoot(), UserModule, CategoriesModule, MmogaModule, AccountModule],
   controllers: [AppController],
   providers: [AppService],
 })

@@ -58,7 +58,7 @@ export class AccountService {
 
   async findById (id: number): Promise<AccountEntity> {
     const account = await this.accountRepository.findOne(id)
-    if (account) {
+    if (!account) {
       throw new HttpException('bad credintails', HttpStatus.FORBIDDEN)
     }
     return Object.assign(new AccountEntity(), account)

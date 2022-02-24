@@ -48,21 +48,23 @@ export class MmogaService {
   }
 
   async executeOrder(orderId: string, accountId: number): Promise<OrdersResponseInterface> {
+
     const endOrder = []
     const categories = await this.categoriesService.findAllCategories()
     const account = await this.accountService.findById(accountId)
-    const {orders} = await this.getAllOrders('processing')
+    const {orders} = await this.getAllOrders('progressing')
     const order = orders.filter(c => c.categoryId === account.categoryId)
     if (account.status === 'pending') {
      for (let i = 0; i < order.length; i++) {
         if (order[i].id[0] === orderId ) {
-          categories.forEach(async category => {
+          for (const category of categories) {
             if (category.id === account.categoryId) {
               const filters = this.mmogaHelper.makeObj(category.rule)
-              if (filters.validate == 'true') {
+              if (filters.validate.split('').slice(1).join('') == 'true') {
                 // validate account
                 const accountInfo = JSON.parse(account.info)
-                const status = await new VerificateAccountHelper().verificate(accountInfo.account.login, accountInfo.account.password, accountInfo.account.lastmatch)
+                const deamon = new VerificateAccountHelper()
+                const status = await deamon.verificate(accountInfo.account.login, accountInfo.account.password, accountInfo.account.lastmatch)
                 if (status === 'pending') {
                   for (let i = 0; i < orders.length; i++) {
                     if (account.categoryId === orders[i]?.categoryId) {
@@ -84,6 +86,7 @@ export class MmogaService {
                   }
                 } else {
                   await this.accountService.updateAccount({ categoryId: account.categoryId, status }, account.id)
+                  throw new HttpException('Account not valid', HttpStatus.CONFLICT)
                 }
               } else {
                 for (let i = 0; i < orders.length; i++) {
@@ -106,7 +109,7 @@ export class MmogaService {
                 }
               }
             }
-          })
+          }
         }
       } 
     }
@@ -309,14 +312,14 @@ export class MmogaService {
 
   async setComplete(order, account) {
 
-    const moreParams = JSON.stringify({
+    const moreParams = {
       mule: {
         account: {
           account: JSON.parse(account.info).account.login,
           password: JSON.parse(account.info).account.password
         }
       }
-    })
+    }
 
     const requestArgs = {
       id: order.id[0],
@@ -339,26 +342,28 @@ export class MmogaService {
     </soapenv:Envelope>
     `
 
-    return await axios.post(mmogaConfig.url, xml, {
-      headers: {
-        'Content-Type': 'text/xml'
-      }
-    })
+  
+      return await axios.post(mmogaConfig.url, xml, {
+        headers: {
+          'Content-Type': 'text/xml'
+        } 
+      })
+      
   }
 
   async provide(order, account) {
-
     try {
       await this.setOrderNum(order)
       await this.setOrderPrice(order)
       return await this.setComplete(order, account)
     } catch (err) {
+      console.log(err)
       throw new HttpException('fail', HttpStatus.CONFLICT)
     }
     
   }
 
-  async execute (): Promise<OrdersResponseInterface> {
+  async execute(): Promise<OrdersResponseInterface> {
     const { orders } = await this.getAllOrders('progressing')
     const accounts = await this.accountService.findAllByStatus('pending')
     const categories = await this.categoriesService.findAllCategories()
