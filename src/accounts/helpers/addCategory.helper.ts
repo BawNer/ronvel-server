@@ -5,28 +5,30 @@ import { CreateAccountDto } from "../dto/createAccount.dto";
 export class AddCategoryHelper {
   protected accounts: []
   protected mmogaHelper: MmogaHelper
-  constructor (
+  constructor(
     protected readonly categories: CategoriesEntity[],
     protected payload: CreateAccountDto,
   ) {
     this.accounts = JSON.parse(payload.info)
   }
 
-  protected mutateAccountProperty(account: any, category: any): object {
+  protected mutateAccountProperty (account: any, category: any): object {
     if (!account.hasOwnProperty('weight')) {
       return {
-        categoryId: category.id
+        categoryId: category.id,
+        weight: category.weight
       }
     } else {
       if (account.weight < category.weight) {
         return {
-          categoryId: category.id
+          categoryId: category.id,
+          weight: category.weight
         }
       }
     }
   }
 
-  protected makeObj(rule: string): any {
+  protected makeObj (rule: string): any {
     const rules: string[] = rule.split(',')
     const filters = {}
     rules.forEach(filter => {
@@ -38,16 +40,17 @@ export class AddCategoryHelper {
     return filters
   }
 
-  protected mergeAction(
+  protected mergeAction (
     condition,
     elseCondition,
     account,
     filter,
     category,
-    skinFilterRangeEndpoint?
+    skinFilterRangeEndpoint?,
+    skinsRange?
   ) {
     const accountProperty = account.account
-    if (!filter.hasOwnProperty('valorantPoints')) {
+    if (!filter.hasOwnProperty('valorantPoints') && !filter.hasOwnProperty('skinsRange')) {
       if (condition) {
         switch (filter.skins.split('').shift()) {
           case '>':
@@ -63,7 +66,7 @@ export class AddCategoryHelper {
         }
       }
     } else {
-      if (condition && filter.hasOwnProperty('skins')) {
+      if (condition && filter.hasOwnProperty('skins') && !filter.hasOwnProperty('skinsRange')) {
         const skinProp = filter.skins.split('').shift()
         const valorantProp = filter.valorantPoints.split('').shift()
         const valorantPoints = +filter.valorantPoints.split('').slice(1).join('') // number
@@ -97,7 +100,7 @@ export class AddCategoryHelper {
             Object.assign(account, this.mutateAccountProperty(account, category)) : false
         }
 
-      } else {
+      } else if (filter.hasOwnProperty('valorantPoints') && !filter.hasOwnProperty('skinsRange')) {
         const valorantPoints = +filter.valorantPoints.split('').slice(1).join('') // number
         const valorantProp = filter.valorantPoints.split('').shift()
         if (condition) {
@@ -110,21 +113,46 @@ export class AddCategoryHelper {
               return accountProperty.valorantPoints == valorantPoints ? Object.assign(account, this.mutateAccountProperty(account, category)) : false
           }
         }
+      } else if (!filter.hasOwnProperty('valorantPoints') && filter.hasOwnProperty('skinsRange')) {
+        const minRange = +skinsRange[0]
+        const maxRange = +skinsRange[1]
+
+        if (accountProperty.skinCount >= minRange && accountProperty.skinCount <= maxRange) {
+          Object.assign(account, this.mutateAccountProperty(account, category))
+        }
+      } else if (filter.hasOwnProperty('valorantPoints') && filter.hasOwnProperty('skinsRange')) {
+        const valorantPoints = +filter.valorantPoints.split('').slice(1).join('') // number
+        const valorantProp = filter.valorantPoints.split('').shift()
+        const minRange = +skinsRange[0]
+        const maxRange = +skinsRange[1]
+        if (condition) {
+          switch (valorantProp) {
+            case '>':
+              return accountProperty.valorantPoints >= valorantPoints && (accountProperty.skinCount >= minRange && accountProperty.skinCount <= maxRange)? Object.assign(account, this.mutateAccountProperty(account, category)) : false
+            case '<':
+              return accountProperty.valorantPoints <= valorantPoints && (accountProperty.skinCount >= minRange && accountProperty.skinCount <= maxRange)? Object.assign(account, this.mutateAccountProperty(account, category)) : false
+            case '=':
+              return accountProperty.valorantPoints == valorantPoints && (accountProperty.skinCount >= minRange && accountProperty.skinCount <= maxRange)? Object.assign(account, this.mutateAccountProperty(account, category)) : false
+          }
+        }
       }
     }
   }
 
-  public merge() {
+  public merge () {
     this.accounts.forEach((account: any) => {
       this.categories.forEach(category => {
         const filter = this.makeObj(category.rule)
         const accountProperty = account.account
 
+        if (filter.strictMode.split('').slice(1).join('') === 'false') {
+
           if (
             filter.hasOwnProperty('skins') &&
             !filter.hasOwnProperty('region') &&
             !filter.hasOwnProperty('ban') &&
-            !filter.hasOwnProperty('valorantPoints')
+            !filter.hasOwnProperty('valorantPoints') &&
+            !filter.hasOwnProperty('skinsRange')
           ) {
             const skinFilterRangeEndpoint = +filter?.skins.split('').slice(1).join('') // filter endpoint range if number, NaN if string
             account = this.mergeAction(
@@ -139,7 +167,8 @@ export class AddCategoryHelper {
             !filter.hasOwnProperty('skins') &&
             filter.hasOwnProperty('region') &&
             !filter.hasOwnProperty('ban') &&
-            !filter.hasOwnProperty('valorantPoints')
+            !filter.hasOwnProperty('valorantPoints') &&
+            !filter.hasOwnProperty('skinsRange')
           ) {
             const region = filter.region.split('').slice(1).join('')
             accountProperty.region.index === region ? Object.assign(account, this.mutateAccountProperty(account, category)) : false
@@ -148,7 +177,8 @@ export class AddCategoryHelper {
               filter.hasOwnProperty('skins') &&
               filter.hasOwnProperty('region') &&
               !filter.hasOwnProperty('ban') &&
-              !filter.hasOwnProperty('valorantPoints')
+              !filter.hasOwnProperty('valorantPoints') &&
+              !filter.hasOwnProperty('skinsRange')
             ) {
               const skinFilterRangeEndpoint = +filter?.skins.split('').slice(1).join('') // filter endpoint range if number, NaN if string
               const region = filter.region.split('').slice(1).join('')
@@ -165,7 +195,8 @@ export class AddCategoryHelper {
                 filter.hasOwnProperty('skins') &&
                 filter.hasOwnProperty('region') &&
                 filter.hasOwnProperty('ban') &&
-                !filter.hasOwnProperty('valorantPoints')
+                !filter.hasOwnProperty('valorantPoints') &&
+                !filter.hasOwnProperty('skinsRange')
               ) {
                 const skinFilterRangeEndpoint = +filter?.skins.split('').slice(1).join('') // filter endpoint range if number, NaN if string
                 const region = filter.region.split('').slice(1).join('')
@@ -183,7 +214,8 @@ export class AddCategoryHelper {
                   filter.hasOwnProperty('skins') &&
                   !filter.hasOwnProperty('region') &&
                   filter.hasOwnProperty('ban') &&
-                  !filter.hasOwnProperty('valorantPoints')
+                  !filter.hasOwnProperty('valorantPoints') &&
+                  !filter.hasOwnProperty('skinsRange')
                 ) {
                   const skinFilterRangeEndpoint = +filter?.skins.split('').slice(1).join('') // filter endpoint range if number, NaN if string
                   const ban = filter.ban.split('').slice(1).join('')
@@ -200,7 +232,8 @@ export class AddCategoryHelper {
                     !filter.hasOwnProperty('skins') &&
                     filter.hasOwnProperty('region') &&
                     filter.hasOwnProperty('ban') &&
-                    !filter.hasOwnProperty('valorantPoints')
+                    !filter.hasOwnProperty('valorantPoints') &&
+                    !filter.hasOwnProperty('skinsRange')
                   ) {
                     const region = filter.region.split('').slice(1).join('')
                     const ban = filter.ban.split('').slice(1).join('')
@@ -216,7 +249,8 @@ export class AddCategoryHelper {
                       filter.hasOwnProperty('skins') &&
                       filter.hasOwnProperty('region') &&
                       filter.hasOwnProperty('ban') &&
-                      filter.hasOwnProperty('valorantPoints')
+                      filter.hasOwnProperty('valorantPoints') &&
+                      !filter.hasOwnProperty('skinsRange')
                     ) {
                       const skinFilterRangeEndpoint = +filter?.skins.split('').slice(1).join('') // filter endpoint range if number, NaN if string
                       const region = filter.region.split('').slice(1).join('')
@@ -234,7 +268,8 @@ export class AddCategoryHelper {
                         !filter.hasOwnProperty('skins') &&
                         filter.hasOwnProperty('region') &&
                         filter.hasOwnProperty('ban') &&
-                        filter.hasOwnProperty('valorantPoints')
+                        filter.hasOwnProperty('valorantPoints') &&
+                        !filter.hasOwnProperty('skinsRange')
                       ) {
                         const region = filter.region.split('').slice(1).join('')
                         const ban = filter.ban.split('').slice(1).join('')
@@ -250,7 +285,8 @@ export class AddCategoryHelper {
                           !filter.hasOwnProperty('skins') &&
                           !filter.hasOwnProperty('region') &&
                           filter.hasOwnProperty('ban') &&
-                          filter.hasOwnProperty('valorantPoints')
+                          filter.hasOwnProperty('valorantPoints') &&
+                          !filter.hasOwnProperty('skinsRange')
                         ) {
                           const ban = filter.ban.split('').slice(1).join('')
                           account = this.mergeAction(
@@ -265,7 +301,8 @@ export class AddCategoryHelper {
                             !filter.hasOwnProperty('skins') &&
                             !filter.hasOwnProperty('region') &&
                             !filter.hasOwnProperty('ban') &&
-                            filter.hasOwnProperty('valorantPoints')
+                            filter.hasOwnProperty('valorantPoints') &&
+                            !filter.hasOwnProperty('skinsRange')
                           ) {
                             const valorantPoints = +filter.valorantPoints.split('').slice(1).join('') // number
                             const valorantProp = filter.valorantPoints.split('').shift()
@@ -278,7 +315,91 @@ export class AddCategoryHelper {
                               case '=':
                                 return accountProperty.valorantPoints == valorantPoints ? Object.assign(account, this.mutateAccountProperty(account, category)) : false
                             }
-                          } 
+                          } else
+                          if (
+                            !filter.hasOwnProperty('skins') &&
+                            !filter.hasOwnProperty('region') &&
+                            !filter.hasOwnProperty('ban') &&
+                            !filter.hasOwnProperty('valorantPoints') &&
+                            filter.hasOwnProperty('skinsRange')
+                          ) {
+                            const skinsRange = filter.skinsRange.split('-') // splitter "-"
+
+                            account = this.mergeAction(
+                              true,
+                              true,
+                              account,
+                              filter,
+                              category,
+                              null,
+                              skinsRange
+                            )
+                          }
+                          else
+                            if (
+                              !filter.hasOwnProperty('skins') &&
+                              filter.hasOwnProperty('region') &&
+                              !filter.hasOwnProperty('ban') &&
+                              !filter.hasOwnProperty('valorantPoints') &&
+                              filter.hasOwnProperty('skinsRange')
+                            ) {
+                              const skinsRange = filter.skinsRange.split('-') // splitter "-"
+                              const region = filter.region.split('').slice(1).join('')
+                              account = this.mergeAction(
+                                accountProperty.region.index === region,
+                                accountProperty.region.index !== region,
+                                account,
+                                filter,
+                                category,
+                                null,
+                                skinsRange
+                              )
+                            }
+                            else
+                              if (
+                                !filter.hasOwnProperty('skins') &&
+                                filter.hasOwnProperty('region') &&
+                                filter.hasOwnProperty('ban') &&
+                                !filter.hasOwnProperty('valorantPoints') &&
+                                filter.hasOwnProperty('skinsRange')
+                              ) {
+                                const skinsRange = filter.skinsRange.split('-') // splitter "-"
+                                const region = filter.region.split('').slice(1).join('')
+                                const ban = filter.ban.split('').slice(1).join('')
+                                account = this.mergeAction(
+                                  (accountProperty.region.index === region && ban === 'No'),
+                                  (accountProperty.region.index === region && ban === 'No'),
+                                  account,
+                                  filter,
+                                  category,
+                                  null,
+                                  skinsRange
+                                )
+                              }
+                              else
+                                if (
+                                  !filter.hasOwnProperty('skins') &&
+                                  filter.hasOwnProperty('region') &&
+                                  filter.hasOwnProperty('ban') &&
+                                  filter.hasOwnProperty('valorantPoints') &&
+                                  filter.hasOwnProperty('skinsRange')
+                                ) {
+                                  const skinsRange = filter.skinsRange.split('-') // splitter "-"
+                                  const region = filter.region.split('').slice(1).join('')
+                                  const ban = filter.ban.split('').slice(1).join('')
+                                  account = this.mergeAction(
+                                    (accountProperty.region.index === region && ban === 'No'),
+                                    (accountProperty.region.index === region && ban === 'No'),
+                                    account,
+                                    filter,
+                                    category,
+                                    null,
+                                    skinsRange
+                                  )
+                                }
+        } else {
+          Object.assign(account, { categoryId: null, weight: -1 })
+        }
       })
     })
     return this.accounts

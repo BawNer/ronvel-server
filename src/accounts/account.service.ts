@@ -52,7 +52,11 @@ export class AccountService {
       throw new HttpException('Credentials are not valid', HttpStatus.UNPROCESSABLE_ENTITY)
     }
 
+    delete account.category
+
     Object.assign(account, updateAccountDto)
+
+
     return await this.accountRepository.save(account)
   }
 

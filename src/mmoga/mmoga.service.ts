@@ -161,7 +161,8 @@ export class MmogaService {
         if (filter.strictMode.split('=').join('') === 'false') {
           if (
             filter.hasOwnProperty('skins') &&
-            !filter.hasOwnProperty('region')
+            !filter.hasOwnProperty('region') &&
+            !filter.hasOwnProperty('skinsRange')
           ) {
             const skinFilterRangeEndpoint = +filter?.skins.split('').slice(1).join('') // filter endpoint range if number, NaN if string
             if (
@@ -195,7 +196,8 @@ export class MmogaService {
             // filter with region and skins
           } else if (
             filter.hasOwnProperty('skins') &&
-            filter.hasOwnProperty('region')
+            filter.hasOwnProperty('region') &&
+            !filter.hasOwnProperty('skinsRange')
           ) {
             const regionFilterEndpoint = filter.region.split('').slice(1).join('')
             const skinFilterRangeEndpoint = +filter?.skins.split('').slice(1).join('') // filter endpoint range if number, NaN if string
@@ -230,10 +232,68 @@ export class MmogaService {
             }
           } else if (
             !filter.hasOwnProperty('skins') &&
-            filter.hasOwnProperty('region')
+            filter.hasOwnProperty('region') &&
+            !filter.hasOwnProperty('skinsRange')
           ) {
             const regionFilterEndpoint = filter.region.split('').slice(1).join('')
             accountOrderPart.indexOf(regionFilterEndpoint) !== -1 ? Object.assign(order, this.mmogaHelper.mutateOrderProperty(order, category)) : false
+          } else if (
+            !filter.hasOwnProperty('skins') &&
+            !filter.hasOwnProperty('region') &&
+            filter.hasOwnProperty('skinsRange')
+          ) {
+            const skinsRange = filter.skinsRange.split('-')
+            if (skinRange) {
+              if (+skinsRange[0] <= +skinRange[0] && +skinsRange[1] >= +skinRange[1]) {
+                Object.assign(order, this.mmogaHelper.mutateOrderProperty(order, category))
+              }
+            }
+          }
+          else if (
+            !filter.hasOwnProperty('skins') &&
+            filter.hasOwnProperty('region') &&
+            filter.hasOwnProperty('skinsRange')
+          ) {
+            const skinsRange = filter.skinsRange.split('-')
+            const regionFilterEndpoint = filter.region.split('').slice(1).join('')
+
+            if (skinRange && accountOrderPart.indexOf(regionFilterEndpoint) !== -1) {
+              if (+skinsRange[0] >= +skinRange[0] && +skinsRange[1] >= +skinRange[1]) {
+                Object.assign(order, this.mmogaHelper.mutateOrderProperty(order, category))
+              }
+            }
+          }
+          else if (
+            filter.hasOwnProperty('skins') &&
+            filter.hasOwnProperty('region') &&
+            filter.hasOwnProperty('skinsRange')
+          ) {
+            const skinsRange = filter.skinsRange.split('-')
+            const skinFilterRangeEndpoint = +filter?.skins.split('').slice(1).join('') // filter endpoint range if number, NaN if string
+            const regionFilterEndpoint = filter.region.split('').slice(1).join('')
+
+            if (skinRange &&
+              Number.isInteger(skinFilterRangeEndpoint) && // true = number; false = string
+              (accountOrderPart.indexOf('Region') === -1 || accountOrderPart.indexOf('Random') !== -1)) {
+              const switchMap = filter.skins.split('').shift()
+              switch (switchMap) {
+                case '>':
+                  if (+skinRange[1] > skinFilterRangeEndpoint && (+skinsRange[0] >= +skinRange[0] && +skinsRange[1] >= +skinRange[1])) {
+                    Object.assign(order, this.mmogaHelper.mutateOrderProperty(order, category))
+                  }
+                  break;
+                case '<':
+                  if (+skinRange[0] < skinFilterRangeEndpoint && +skinRange[1] > skinFilterRangeEndpoint && (+skinsRange[0] >= +skinRange[0] && +skinsRange[1] >= +skinRange[1])) {
+                    Object.assign(order, this.mmogaHelper.mutateOrderProperty(order, category))
+                  }
+                  break;
+                case '=':
+                  if (+skinRange[0] == skinFilterRangeEndpoint || +skinRange[1] == skinFilterRangeEndpoint && (+skinsRange[0] >= +skinRange[0] && +skinsRange[1] >= +skinRange[1])) {
+                    Object.assign(order, this.mmogaHelper.mutateOrderProperty(order, category))
+                  }
+                  break;
+              }
+            }
           }
         } else {
           if (game === category.name) {
