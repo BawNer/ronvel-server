@@ -116,9 +116,10 @@ export class AddCategoryHelper {
       } else if (!filter.hasOwnProperty('valorantPoints') && filter.hasOwnProperty('skinsRange')) {
         const minRange = +skinsRange[0]
         const maxRange = +skinsRange[1]
-
         if (accountProperty.skinCount >= minRange && accountProperty.skinCount <= maxRange) {
-          Object.assign(account, this.mutateAccountProperty(account, category))
+          return Object.assign(account, this.mutateAccountProperty(account, category))
+        } else {
+          return account
         }
       } else if (filter.hasOwnProperty('valorantPoints') && filter.hasOwnProperty('skinsRange')) {
         const valorantPoints = +filter.valorantPoints.split('').slice(1).join('') // number
@@ -309,11 +310,11 @@ export class AddCategoryHelper {
 
                             switch (valorantProp) {
                               case '>':
-                                return accountProperty.valorantPoints >= valorantPoints ? Object.assign(account, this.mutateAccountProperty(account, category)) : false
+                                accountProperty.valorantPoints >= valorantPoints ? Object.assign(account, this.mutateAccountProperty(account, category)) : false; break;
                               case '<':
-                                return accountProperty.valorantPoints <= valorantPoints ? Object.assign(account, this.mutateAccountProperty(account, category)) : false
+                                accountProperty.valorantPoints <= valorantPoints ? Object.assign(account, this.mutateAccountProperty(account, category)) : false; break;
                               case '=':
-                                return accountProperty.valorantPoints == valorantPoints ? Object.assign(account, this.mutateAccountProperty(account, category)) : false
+                                accountProperty.valorantPoints == valorantPoints ? Object.assign(account, this.mutateAccountProperty(account, category)) : false; break;
                             }
                           } else
                           if (
