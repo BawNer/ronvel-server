@@ -45,6 +45,25 @@ export class AccountService {
     return resultsAccount
   }
 
+  async createAccountWithcategory (createAccountDto: CreateAccountDto, categoryId: number): Promise<AccountEntity[]> {
+    const resultsAccount: AccountEntity[] = []
+    const categories = await this.categoriesService.findAllCategories()
+    const mergeCategoiesWitAccount = new AddCategoryHelper(categories, createAccountDto)
+    const accounts: any = mergeCategoiesWitAccount.mergeWithCategory(categoryId)
+    for (const account of accounts) {
+      const newAccount = new AccountEntity()
+      const fields: CreateAccountDto = {
+        categoryId: account.categoryId,
+        status: 'pending',
+        info: JSON.stringify({ game: account.game, account: account.account })
+      }
+      Object.assign(newAccount, fields)
+      const result = await this.accountRepository.save(newAccount)
+      resultsAccount.push(result)
+    }
+    return resultsAccount
+  }
+
   async updateAccount(updateAccountDto: UpdateAccountDto, id: number): Promise<AccountEntity> {
     const account = await this.accountRepository.findOne(id)
 

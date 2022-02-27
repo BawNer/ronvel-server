@@ -27,7 +27,7 @@ export class AppModule {
       method: RequestMethod.ALL
     })
     consumer.apply(TextToJsonMiddleware).forRoutes({
-      path: '/account',
+      path: '/account*',
       method: RequestMethod.POST
     })
   }

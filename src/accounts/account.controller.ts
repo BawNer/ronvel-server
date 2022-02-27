@@ -1,7 +1,5 @@
-import { MmogaService } from "@app/mmoga/mmoga.service";
 import { AuthGuard } from "@app/users/guards/auth.guards";
 import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards, UsePipes, ValidationPipe } from "@nestjs/common";
-import { DeleteResult } from "typeorm";
 import { AccountService } from "./account.service";
 import { CreateAccountDto } from "./dto/createAccount.dto";
 import { UpdateAccountDto } from "./dto/updateAccount.dto";
@@ -36,6 +34,17 @@ export class AccountControler {
   async createAccount(@Body('account') createAccountDto: CreateAccountDto): Promise<AccountsResponseInterface> {
     const accounts = await this.accountService.createAccount(createAccountDto)
     return {accounts}
+  }
+
+  @Post('account/:categoryId')
+  @UseGuards(AuthGuard)
+  @UsePipes(new ValidationPipe())
+  async createAccountWithCategory (
+    @Body('account') createAccountDto: CreateAccountDto, 
+    @Param('categoryId') categoryId: number
+  ): Promise<AccountsResponseInterface>  {
+    const accounts = await this.accountService.createAccountWithcategory(createAccountDto, categoryId)
+    return { accounts }
   }
 
   @Put('account/:id')
