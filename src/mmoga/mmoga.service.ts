@@ -14,7 +14,7 @@ import { CronJob } from 'cron'
 export class MmogaService {
   protected mmogaHelper = new MmogaHelper()
   protected isDeamonExecuteOrder = null
-  protected cron = new CronJob('* */1 * * * *', async () => {
+  protected cron = new CronJob('* */5 * * * *', async () => {
     console.log('cron task start')
     await this.execute()
     console.log('cron task end')
@@ -25,6 +25,7 @@ export class MmogaService {
     private readonly scheduleRegistry: SchedulerRegistry
   ) {
     this.scheduleRegistry.addCronJob('mmogaDeamon', this.cron)
+    this.scheduleRegistry.getCronJob('mmogaDeamon').stop()
   }
 
   getStateDeamon(): boolean {
@@ -35,13 +36,15 @@ export class MmogaService {
   }
 
   async changeDeamonState(status: string) {
-    if (this.isDeamonExecuteOrder !== status) {
+    if (this.isDeamonExecuteOrder != status) {
       this.isDeamonExecuteOrder = status
       if (status == 'true') {
         const task = this.scheduleRegistry.getCronJob('mmogaDeamon')
+        console.log('task starteed')
         task.start()
       } else {
         const task = this.scheduleRegistry.getCronJob('mmogaDeamon')
+        console.log('task stopped')
         task.stop()
       }
       return `Deamon status has been changed to ${this.isDeamonExecuteOrder}`
