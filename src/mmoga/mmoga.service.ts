@@ -95,7 +95,7 @@ export class MmogaService {
                 }
               } else {
                 for (let i = 0; i < orders.length; i++) {
-                  if (account.categoryId === orders[i]?.categoryId) {
+                  if (account.categoryId == orders[i]?.categoryId) {
                     try {
                       await this.provide(orders[i], account)
                       await this.accountService.updateAccount({ categoryId: account.categoryId, status: 'closed' }, account.id)
@@ -163,7 +163,7 @@ export class MmogaService {
 
       categories.forEach(category => {
         const filter = this.mmogaHelper.makeObj(category.rule)
-        if (filter.strictMode.split('=').join('') === 'false') {
+        if (filter.strictMode == 'false') {
           if (
             filter.hasOwnProperty('skins') &&
             !filter.hasOwnProperty('region') &&
@@ -204,7 +204,7 @@ export class MmogaService {
             filter.hasOwnProperty('region') &&
             !filter.hasOwnProperty('skinsRange')
           ) {
-            const regionFilterEndpoint = filter.region.split('').slice(1).join('')
+            const regionFilterEndpoint = filter.region
             const skinFilterRangeEndpoint = +filter?.skins.split('').slice(1).join('') // filter endpoint range if number, NaN if string
             if (
               skinRange &&
@@ -240,7 +240,7 @@ export class MmogaService {
             filter.hasOwnProperty('region') &&
             !filter.hasOwnProperty('skinsRange')
           ) {
-            const regionFilterEndpoint = filter.region.split('').slice(1).join('')
+            const regionFilterEndpoint = filter.region
             accountOrderPart.indexOf(regionFilterEndpoint) !== -1 ? Object.assign(order, this.mmogaHelper.mutateOrderProperty(order, category)) : false
           } else if (
             !filter.hasOwnProperty('skins') &&
@@ -260,7 +260,7 @@ export class MmogaService {
             filter.hasOwnProperty('skinsRange')
           ) {
             const skinsRange = filter.skinsRange.split('-')
-            const regionFilterEndpoint = filter.region.split('').slice(1).join('')
+            const regionFilterEndpoint = filter.region
 
             if (skinRange && accountOrderPart.indexOf(regionFilterEndpoint) !== -1) {
               if (+skinsRange[0] >= +skinRange[0] && +skinsRange[1] >= +skinRange[1]) {
@@ -275,11 +275,11 @@ export class MmogaService {
           ) {
             const skinsRange = filter.skinsRange.split('-')
             const skinFilterRangeEndpoint = +filter?.skins.split('').slice(1).join('') // filter endpoint range if number, NaN if string
-            const regionFilterEndpoint = filter.region.split('').slice(1).join('')
+            const regionFilterEndpoint = filter.region
 
             if (skinRange &&
               Number.isInteger(skinFilterRangeEndpoint) && // true = number; false = string
-              (accountOrderPart.indexOf('Region') === -1 || accountOrderPart.indexOf('Random') !== -1)) {
+              (accountOrderPart.indexOf(regionFilterEndpoint) !== -1 || accountOrderPart.indexOf('Random') !== -1)) {
               const switchMap = filter.skins.split('').shift()
               switch (switchMap) {
                 case '>':

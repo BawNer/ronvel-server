@@ -25,12 +25,14 @@ export class MmogaHelper {
     if (order.hasOwnProperty('weight')) {
       if (order.weight < category.weight) {
         return {
-          categoryId: category.id
+          categoryId: category.id,
+          weight: category.weight
         }
       }
     } else {
       return {
-        categoryId: category.id
+        categoryId: category.id,
+        weight: category.weight
       }
     }
   }
