@@ -14,8 +14,10 @@ import { CronJob } from 'cron'
 export class MmogaService {
   protected mmogaHelper = new MmogaHelper()
   protected isDeamonExecuteOrder = null
-  protected cron = new CronJob('* */5 * * * *', async () => {
+  protected cron = new CronJob('* */1 * * * *', async () => {
+    console.log('cron task start')
     await this.execute()
+    console.log('cron task end')
   })
   constructor (
     private readonly categoriesService: CategoriesService,
@@ -60,7 +62,7 @@ export class MmogaService {
           for (const category of categories) {
             if (category.id === account.categoryId) {
               const filters = this.mmogaHelper.makeObj(category.rule)
-              if (filters.validate.split('').slice(1).join('') == 'true') {
+              if (filters.validate == 'true') {
                 // validate account
                 const accountInfo = JSON.parse(account.info)
                 const deamon = new VerificateAccountHelper()
@@ -413,12 +415,17 @@ export class MmogaService {
 
   async provide(order, account) {
     try {
-      await this.setOrderNum(order)
-      await this.setOrderPrice(order)
+      console.log(order)
+      if (!order.orderNum[0].length) {
+        await this.setOrderNum(order)
+      }
+      if (order.unitPrice[0] !== order.unitPriceFromXML[0]) {
+        await this.setOrderPrice(order)
+      }
       return await this.setComplete(order, account)
     } catch (err) {
-      console.log(err)
-      throw new HttpException('fail', HttpStatus.CONFLICT)
+      console.log(err.response.data)
+      throw new HttpException(err.response.data, HttpStatus.CONFLICT)
     }
     
   }
