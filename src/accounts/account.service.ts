@@ -64,6 +64,28 @@ export class AccountService {
     return resultsAccount
   }
 
+  async createAccountFromRawText(createAccountDto: CreateAccountDto): Promise<AccountEntity[]> {
+    const accounts = JSON.parse(createAccountDto.info)
+    const result: AccountEntity[] = []
+    for (const account of accounts) {
+      const newAccount = new AccountEntity()
+      const fields: CreateAccountDto = {
+        categoryId: createAccountDto.categoryId,
+        status: 'pending',
+        info: JSON.stringify({
+          account: {
+            login: account.login,
+            password: account.password
+          }
+        })
+      }
+      Object.assign(newAccount, fields)
+      result.push(await this.accountRepository.save(newAccount))
+    }
+
+    return result
+  }
+
   async updateAccount(updateAccountDto: UpdateAccountDto, id: number): Promise<AccountEntity> {
     const account = await this.accountRepository.findOne(id)
 

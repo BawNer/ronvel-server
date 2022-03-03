@@ -48,6 +48,14 @@ export class AccountControler {
     return { accounts }
   }
 
+  @Post('accounts')
+  @UseGuards(AuthGuard)
+  @UsePipes(new ValidationPipe())
+  async createAccountFromRawText(@Body('accounts') createAccountDto: CreateAccountDto): Promise<AccountsResponseInterface> {
+    const accounts = await this.accountService.createAccountFromRawText(createAccountDto)
+    return { accounts }
+  }
+
   @Put('account/:id')
   @UseGuards(AuthGuard)
   @UsePipes(new ValidationPipe())

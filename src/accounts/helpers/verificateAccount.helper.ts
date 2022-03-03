@@ -5,6 +5,11 @@ export class VerificateAccountHelper {
 
   public async verificate(login: string, password: string, lastmatch: number): Promise<string> {
     let verified = '';
+
+    if (lastmatch) {
+      lastmatch = new Date().getTime()
+    }
+
     const browser = await this.puppeteer.launch({ headless: true, executablePath: '/usr/bin/chromium-browser', args: ['--disable-setuid-sandbox', '--no-sandbox'] })
 
     const page = await browser.newPage()
