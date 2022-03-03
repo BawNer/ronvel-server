@@ -389,7 +389,7 @@ export class MmogaService {
     const requestArgs = {
       id: order.id[0],
       key: mmogaConfig.key,
-      checksum: md5(`${mmogaConfig.key}${order.id[0]}${moreParams}${mmogaConfig.password}`),
+      checksum: md5(`${mmogaConfig.key}${order.id[0]}${JSON.stringify(moreParams)}${mmogaConfig.password}`),
       price: order.unitPriceFromXML[0]
     }
 
@@ -400,7 +400,7 @@ export class MmogaService {
                 <urn:setComplete>
                     <id>${requestArgs.id}</id>
                     <key>${requestArgs.key}</key>
-                    <moreParams>${moreParams}</moreParams>
+                    <moreParams>${JSON.stringify(moreParams)}</moreParams>
                     <checksum>${requestArgs.checksum}</checksum>
                 </urn:setComplete>
             </soapenv:Body>
