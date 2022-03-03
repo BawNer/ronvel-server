@@ -95,4 +95,23 @@ export class AccountService {
 
     return await this.accountRepository.delete(id)
   }
+
+  async deleteAllAccounts(): Promise<DeleteResult[]> {
+    const deleteResult = []
+    const accounts = await this.findAll()
+    for (const account of accounts) {
+      const deletedAccount = await this.accountRepository.delete({ id: account.id })
+      deleteResult.push(deletedAccount)
+    }
+    
+    return deleteResult
+  }
+
+  async deleteAccountsByCategory(categoryId: number): Promise<DeleteResult> {
+    return await this.accountRepository.delete({categoryId})
+  }
+
+  async deleteAccountsByStatus(status: string): Promise<DeleteResult> {
+    return await this.accountRepository.delete({status})
+  }
 }

@@ -1,5 +1,6 @@
 import { AuthGuard } from "@app/users/guards/auth.guards";
 import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards, UsePipes, ValidationPipe } from "@nestjs/common";
+import { DeleteResult } from "typeorm";
 import { AccountService } from "./account.service";
 import { CreateAccountDto } from "./dto/createAccount.dto";
 import { UpdateAccountDto } from "./dto/updateAccount.dto";
@@ -57,7 +58,25 @@ export class AccountControler {
 
   @Delete('account/:id')
   @UseGuards(AuthGuard)
-  async deleteAccount(@Param('id') id: number) {
+  async deleteAccount(@Param('id') id: number): Promise<DeleteResult> {
     return await this.accountService.deleteAccount(id)
+  }
+
+  @Delete('/accounts')
+  @UseGuards(AuthGuard)
+  async deleteAllAccounts(): Promise<DeleteResult[]> {
+    return await this.accountService.deleteAllAccounts()
+  }
+
+  @Delete('accounts/category/:categoryId')
+  @UseGuards(AuthGuard)
+  async deleteAccountsByCategory (@Param('categoryId') categoryId: number): Promise<DeleteResult> {
+    return await this.accountService.deleteAccountsByCategory(categoryId)
+  }
+
+  @Delete('accounts/status/:status')
+  @UseGuards(AuthGuard)
+  async deleteAccountsByStatus (@Param('status') status: string): Promise<DeleteResult> {
+    return await this.accountService.deleteAccountsByStatus(status)
   }
 }
