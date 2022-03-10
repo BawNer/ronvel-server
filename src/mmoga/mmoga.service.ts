@@ -379,10 +379,8 @@ export class MmogaService {
 
     const moreParams = {
       mule: {
-        account: {
-          account: JSON.parse(account.info).account.login,
-          password: JSON.parse(account.info).account.password
-        }
+        account: JSON.parse(account.info).account.login,
+        password: JSON.parse(account.info).account.password
       }
     }
 
