@@ -10,7 +10,7 @@ export class VerificateAccountHelper {
       lastmatch = new Date().getTime()
     }
 
-    const browser = await this.puppeteer.launch({ headless: true, executablePath: '/usr/bin/chromium-browser', args: ['--disable-setuid-sandbox', '--no-sandbox'] })
+    const browser = await this.puppeteer.launch({ headless: true,  args: ['--disable-setuid-sandbox', '--no-sandbox'] })
 
     const page = await browser.newPage()
 
@@ -18,8 +18,14 @@ export class VerificateAccountHelper {
 
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36')
 
-    await page.goto(this.serviceUrl)
+    await page.setDefaultNavigationTimeout(0)
 
+    try {
+      await page.goto(this.serviceUrl)
+    } catch (err) {
+	 console.log(err)
+    	await page.goto(this.serviceUrl)
+    }
     await Promise.all([
       page.click('#riotbar-right-content > div.undefined.riotbar-account-reset._2f9sdDMZUGg63xLkFmv-9O.riotbar-account-container > div > a'),
       page.waitForNavigation({ waitUntil: 'networkidle0' })

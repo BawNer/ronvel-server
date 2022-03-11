@@ -69,7 +69,15 @@ export class MmogaService {
                 // validate account
                 const accountInfo = JSON.parse(account.info)
                 const deamon = new VerificateAccountHelper()
-                const status = await deamon.verificate(accountInfo.account.login, accountInfo.account.password, accountInfo.account.lastmatch)
+		let status = ''
+		try {
+			status = await deamon.verificate(accountInfo.account.login, accountInfo.account.password, accountInfo.account.lastmatch)
+		}
+		catch(err) {
+			console.log(err)
+			status = await deamon.verificate(accountInfo.account.login, accountInfo.account.password, accountInfo.account.lastmatch)
+		}
+               // const status = await deamon.verificate(accountInfo.account.login, accountInfo.account.password, accountInfo.account.lastmatch)
                 if (status === 'pending') {
                   for (let i = 0; i < orders.length; i++) {
                     if (account.categoryId === orders[i]?.categoryId) {
