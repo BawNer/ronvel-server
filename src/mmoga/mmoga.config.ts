@@ -1,5 +1,5 @@
 export default {
   url: 'http://api.mmoga.de/soap.php/wsdl?wsdl',
-  key: 'Yiebeichah8nooZuo0laisahgod9zi7i',
-  password: 'aiTahhah9eit2a'
+  key: 'aeph2ieh7ez4phai4aegh0yooghiefoo',
+  password: 'Eeteb3leesh8na'
 }
