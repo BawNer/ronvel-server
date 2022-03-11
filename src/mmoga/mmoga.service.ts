@@ -14,7 +14,7 @@ import { CronJob } from 'cron'
 export class MmogaService {
   protected mmogaHelper = new MmogaHelper()
   protected isDeamonExecuteOrder = null
-  protected cron = new CronJob('* */5 * * * *', async () => {
+  protected cron = new CronJob('10 */5 * * * *', async () => {
     console.log('cron task start')
     await this.execute()
     console.log('cron task end')
@@ -282,7 +282,7 @@ export class MmogaService {
     const categories = await this.categoriesService.findAllCategories()
     const closedOrders = []
     for (const account of accounts) {
-      categories.forEach(async category => {
+      for (const category of categories) {
         if (category.id === account.categoryId) {
           const filters = this.mmogaHelper.makeObj(category.rule)
           if (filters.validate == 'true') {
@@ -332,7 +332,7 @@ export class MmogaService {
             }
           }
         }
-      })
+      }
       
     }
 
