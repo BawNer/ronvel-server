@@ -75,8 +75,8 @@ export class MmogaHelper {
   public mergeSkinsWithRegion(order, skinOrderPart, accountOrderPart, category, filter) {
     const region = filter.region
     let returnableValue = order
-
-    if (accountOrderPart.indexOf(region) !== -1) {
+    
+    if (accountOrderPart.indexOf(region) !== -1 || (region == 'NA' && accountOrderPart.indexOf('Random') !== -1)) {
       returnableValue = this.mergeSkins(order, skinOrderPart, category, filter)
     }
 
@@ -87,7 +87,7 @@ export class MmogaHelper {
     const region = filter.region
     let returnableValue = order
 
-    if (accountOrderPart.indexOf(region) !== -1) {
+    if (accountOrderPart.indexOf(region) !== -1 || (region == 'NA' && accountOrderPart.indexOf('Random') !== -1)) {
       returnableValue = this.mutateOrderProperty(order, category)
     }
 
@@ -100,7 +100,7 @@ export class MmogaHelper {
     const skinRangeFilter = filter.skinRange.split('-')
     let returnableValue = order
 
-    if (accountOrderPart.indexOf(region) !== -1 && Array.isArray(skinRange)) {
+    if ((accountOrderPart.indexOf(region) !== -1 || (region == 'NA' && accountOrderPart.indexOf('Random') !== -1)) && Array.isArray(skinRange)) {
       if (+skinRangeFilter[0] <= +skinRange[0] && +skinRangeFilter[1] >= +skinRange[1]) {
         returnableValue = this.mutateOrderProperty(order, category)
       }
@@ -133,7 +133,7 @@ export class MmogaHelper {
 
       categories.forEach(category => {
         const filter = this.makeObj(category.rule)
-
+        
         if (filter.strictMode == 'false') {
 
           if (

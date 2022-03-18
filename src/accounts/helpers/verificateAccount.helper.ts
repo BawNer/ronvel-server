@@ -20,12 +20,8 @@ export class VerificateAccountHelper {
 
     await page.setDefaultNavigationTimeout(0)
 
-    try {
-      await page.goto(this.serviceUrl)
-    } catch (err) {
-	 console.log(err)
-    	await page.goto(this.serviceUrl)
-    }
+    await page.goto(this.serviceUrl, { waitUntil: 'load' })
+
     await Promise.all([
       page.click('#riotbar-right-content > div.undefined.riotbar-account-reset._2f9sdDMZUGg63xLkFmv-9O.riotbar-account-container > div > a'),
       page.waitForNavigation({ waitUntil: 'networkidle0' })
