@@ -14,7 +14,7 @@ import { CronJob } from 'cron'
 export class MmogaService {
   protected mmogaHelper = new MmogaHelper()
   protected isDeamonExecuteOrder = null
-  protected cron = new CronJob('10 30 * * * *', async () => {
+  protected cron = new CronJob('10 45 * * * *', async () => {
     console.log('cron task start')
     await this.execute()
     console.log('cron task end')
