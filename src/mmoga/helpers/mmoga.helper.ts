@@ -1,6 +1,7 @@
 export class MmogaHelper {
 
   public makeObj(rule: string): any {
+    console.log(rule)
     const rules: string[] = rule.split(',')
     const filters = {}
     rules.forEach(filter => {
