@@ -8,8 +8,7 @@ import { ErrorLogger } from './ErrorLogger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { 
-    cors: true,
-    logger: new ErrorLogger()
+    cors: true
   });
   app.setGlobalPrefix('api');
   await app.listen(80);
