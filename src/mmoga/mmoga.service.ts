@@ -159,13 +159,14 @@ export class MmogaService {
       }
     }).then(res => {
       parseStringPromise(res.data)
-      .then(json => orders = json['SOAP-ENV:Envelope']['SOAP-ENV:Body'][0]['ns1:getOrdersResponse'][0].return[0].item)
+      .then(json => {
+        json['SOAP-ENV:Envelope']['SOAP-ENV:Body'][0]['ns1:getOrdersResponse'][0].return[0].length > 1 ? 
+        orders = json['SOAP-ENV:Envelope']['SOAP-ENV:Body'][0]['ns1:getOrdersResponse'][0].return[0].item : orders = []
+      })
     }).catch(err => console.log(err.response.data, requestArgs, xml))
 
     if (orders.length > 0) {
       orders = this.mmogaHelper.mergeWithCategory(orders, categories)
-    } else {
-      orders = []
     }
 
     return { orders }
