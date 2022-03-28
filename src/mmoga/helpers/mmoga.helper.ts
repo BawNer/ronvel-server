@@ -124,6 +124,7 @@ export class MmogaHelper {
   }
 
   public mergeWithCategory(orders, categories) {
+  if (!orders.isArray()) { return orders }
     orders.forEach(order => {
       const game = order.game[0]
       const orderParts = game.split(',')
