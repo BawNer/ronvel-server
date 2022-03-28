@@ -162,7 +162,11 @@ export class MmogaService {
       .then(json => orders = json['SOAP-ENV:Envelope']['SOAP-ENV:Body'][0]['ns1:getOrdersResponse'][0].return[0].item)
     }).catch(err => console.log(err.response.data, requestArgs, xml))
 
-    orders = this.mmogaHelper.mergeWithCategory(orders, categories)
+    if (orders.length > 0) {
+      orders = this.mmogaHelper.mergeWithCategory(orders, categories)
+    } else {
+      orders = []
+    }
 
     return { orders }
   }
