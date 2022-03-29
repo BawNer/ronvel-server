@@ -160,7 +160,7 @@ export class MmogaService {
     }).then(res => {
       parseStringPromise(res.data)
       .then(json => {
-        json['SOAP-ENV:Envelope']['SOAP-ENV:Body'][0]['ns1:getOrdersResponse'][0].return[0].length > 1 ? 
+        typeof json['SOAP-ENV:Envelope']['SOAP-ENV:Body'][0]['ns1:getOrdersResponse'][0].return[0].item !== 'undefined' ? 
         orders = json['SOAP-ENV:Envelope']['SOAP-ENV:Body'][0]['ns1:getOrdersResponse'][0].return[0].item : orders = []
       })
     }).catch(err => console.log(err.response.data, requestArgs, xml))
