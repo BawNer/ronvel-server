@@ -14,7 +14,7 @@ import { CronJob } from 'cron'
 export class MmogaService {
   protected mmogaHelper = new MmogaHelper()
   protected isDeamonExecuteOrder = null
-  protected cron = new CronJob('10 45 * * * *', async () => {
+  protected cron = new CronJob('10 */45 * * * *', async () => {
     console.log('cron task start')
     await this.execute()
     console.log('cron task end')
@@ -76,7 +76,9 @@ export class MmogaService {
 		catch(err) {
 			console.log(err)
 			status = await deamon.verificate(accountInfo.account.login, accountInfo.account.password, accountInfo.account.lastmatch)
+		
 		}
+		console.log(status, 'From mmoga service')
                // const status = await deamon.verificate(accountInfo.account.login, accountInfo.account.password, accountInfo.account.lastmatch)
                 if (status === 'pending') {
                   for (let i = 0; i < orders.length; i++) {
@@ -294,17 +296,20 @@ export class MmogaService {
     const accounts = await this.accountService.findAllByStatus('pending')
     const categories = await this.categoriesService.findAllCategories()
     const closedOrders = []
-    for (const account of accounts) {
-      for (const category of categories) {
+    for await (const account of accounts) {
+      for await (const category of categories) {
         if (category.id === account.categoryId) {
           const filters = this.mmogaHelper.makeObj(category.rule)
           if (filters.validate == 'true') {
             // validate account
             const accountInfo = JSON.parse(account.info)
             const status = await new VerificateAccountHelper().verificate(accountInfo.account.login, accountInfo.account.password, accountInfo.account.lastmatch)
-            if (status === 'pending') {
+            console.log(status, 'MMOGA SERVICE')
+	    if (status == 'pending') {
               for (let i = 0; i < orders.length; i++) {
-                if (account.categoryId === orders[i]?.categoryId) {
+console.log(account.categoryId, orders[i].categoryId)
+                if (account.categoryId == orders[i].categoryId) {
+			console.log('Finded!')
                   try {
                     await this.provide(orders[i], account)
                     await this.accountService.updateAccount({ categoryId: account.categoryId, status: 'closed' }, account.id)
@@ -322,6 +327,7 @@ export class MmogaService {
                 }
               }
             } else {
+		    console.log('Not found!')
               await this.accountService.updateAccount({ categoryId: account.categoryId, status }, account.id)
             }
           } else {
