@@ -167,7 +167,7 @@ export class MmogaHelper {
               Object.assign(order, this.mergeSkinRange(order, skinOrderPart, category, filter))
             }
         } else {
-          if (game == category.name) {
+          if (game.split(' ').join('').toLowerCase() == category.name.split(' ').join('').toLowerCase()) {
             Object.assign(order, this.mutateOrderProperty(order, category))
           }
         }
