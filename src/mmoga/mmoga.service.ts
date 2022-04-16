@@ -275,10 +275,6 @@ export class MmogaService {
   }
 
   async provide(order, account) {
-    const a = JSON.parse(account.info)
-    if (a.account.login.length == 0 || a.account.password.length == 0) {
-      return
-    }
     try {
       console.log(order)
       if (!order.orderNum[0].length) {

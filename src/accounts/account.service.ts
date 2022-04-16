@@ -68,6 +68,9 @@ export class AccountService {
     const accounts = JSON.parse(createAccountDto.info)
     const result: AccountEntity[] = []
     for (const account of accounts) {
+      if (account.login.length == 0 || account.password.length == 0) {
+        continue
+      }
       const newAccount = new AccountEntity()
       const fields: CreateAccountDto = {
         categoryId: createAccountDto.categoryId,
