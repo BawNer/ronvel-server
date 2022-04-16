@@ -275,6 +275,10 @@ export class MmogaService {
   }
 
   async provide(order, account) {
+    const a = JSON.parse(account.info)
+    if (a.account.login.length == 0 || a.account.password.length == 0) {
+      return
+    }
     try {
       console.log(order)
       if (!order.orderNum[0].length) {
@@ -285,6 +289,8 @@ export class MmogaService {
       }
       return await this.setComplete(order, account)
     } catch (err) {
+      console.log('ERRORRR')
+      console.log(account)
       console.log(err.response.data)
       throw new HttpException(err.response.data, HttpStatus.CONFLICT)
     }
